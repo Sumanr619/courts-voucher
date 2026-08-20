@@ -16,6 +16,8 @@
   "column_break_zxki",
   "reference_name",
   "balance_after",
+  "reversal_section",
+  "reverses_transaction",
   "remarks_section",
   "remarks",
   "section_break_ief6",
@@ -104,13 +106,24 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
+  },
+  {
+   "fieldname": "reversal_section",
+   "fieldtype": "Section Break",
+   "label": "Reversal"
+  },
+  {
+   "fieldname": "reverses_transaction",
+   "fieldtype": "Link",
+   "label": "Reverses Transaction",
+   "options": "Voucher Transaction"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-20 20:29:44.849327",
+ "modified": "2026-08-20 20:45:16.039564",
  "modified_by": "Administrator",
  "module": "Courts Voucher",
  "name": "Voucher Transaction",

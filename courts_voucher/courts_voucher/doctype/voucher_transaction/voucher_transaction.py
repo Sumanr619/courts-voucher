@@ -10,11 +10,15 @@ class VoucherTransaction(Document):
     def validate(self):
         self.validate_basic_fields()
         self.load_voucher()
+        self.validate_reversal_reference()
         self.validate_voucher_state()
         self.calculate_balances()
 
     def on_submit(self):
         self.apply_transaction()
+
+    def before_cancel(self):
+        self.validate_cancellation_order()
 
     def on_cancel(self):
         self.reverse_transaction()
@@ -49,6 +53,66 @@ class VoucherTransaction(Document):
             self.voucher,
         )
 
+    def validate_reversal_reference(self):
+        if self.transaction_type != "Redemption Reversal":
+            return
+
+        if not self.reverses_transaction:
+            frappe.throw(
+                "Reverses Transaction is required for a Redemption Reversal."
+            )
+
+        original = frappe.get_doc(
+            "Voucher Transaction",
+            self.reverses_transaction,
+        )
+
+        if original.docstatus != 1:
+            frappe.throw(
+                "The transaction being reversed must be submitted."
+            )
+
+        if original.transaction_type != "Redemption":
+            frappe.throw(
+                "Only a Redemption transaction can be reversed."
+            )
+
+        if original.voucher != self.voucher:
+            frappe.throw(
+                "The reversal must use the same voucher as the original transaction."
+            )
+
+        if self.amount > original.amount:
+            frappe.throw(
+                f"Reversal amount cannot exceed original redemption amount "
+                f"of {original.amount}."
+            )
+
+        existing_reversed_amount = frappe.db.sql(
+            """
+            SELECT COALESCE(SUM(amount), 0)
+            FROM `tabVoucher Transaction`
+            WHERE reverses_transaction = %s
+              AND transaction_type = 'Redemption Reversal'
+              AND docstatus = 1
+              AND name != %s
+            """,
+            (
+                self.reverses_transaction,
+                self.name or "",
+            ),
+        )[0][0]
+
+        remaining_reversible = (
+            original.amount - existing_reversed_amount
+        )
+
+        if self.amount > remaining_reversible:
+            frappe.throw(
+                f"Only {remaining_reversible} remains reversible "
+                f"against transaction {original.name}."
+            )
+
     def validate_voucher_state(self):
         voucher = self.voucher_doc
 
@@ -56,7 +120,12 @@ class VoucherTransaction(Document):
             if voucher.blocked:
                 frappe.throw("Voucher is blocked.")
 
-            if voucher.status in ["Redeemed", "Expired", "Blocked", "Cancelled"]:
+            if voucher.status in [
+                "Redeemed",
+                "Expired",
+                "Blocked",
+                "Cancelled",
+            ]:
                 frappe.throw(
                     f"Voucher cannot be redeemed because its status is "
                     f"{voucher.status}."
@@ -72,7 +141,7 @@ class VoucherTransaction(Document):
                     f"of {voucher.available_balance}."
                 )
 
-        if self.transaction_type == "Redemption Reversal":
+        elif self.transaction_type == "Redemption Reversal":
             if self.amount > voucher.redeemed_value:
                 frappe.throw(
                     f"Reversal amount cannot exceed redeemed value "
@@ -135,6 +204,41 @@ class VoucherTransaction(Document):
 
         voucher.flags.ignore_validate_update_after_submit = True
         voucher.save(ignore_permissions=True)
+
+    def validate_cancellation_order(self):
+        later_transaction = frappe.db.sql(
+            """
+            SELECT name
+            FROM `tabVoucher Transaction`
+            WHERE voucher = %s
+              AND docstatus = 1
+              AND name != %s
+              AND (
+                    posting_date > %s
+                    OR (
+                        posting_date = %s
+                        AND creation > %s
+                    )
+              )
+            ORDER BY posting_date ASC, creation ASC
+            LIMIT 1
+            """,
+            (
+                self.voucher,
+                self.name,
+                self.posting_date,
+                self.posting_date,
+                self.creation,
+            ),
+            as_dict=True,
+        )
+
+        if later_transaction:
+            frappe.throw(
+                "This transaction cannot be cancelled because later "
+                "submitted voucher transactions exist. "
+                "Create a Redemption Reversal instead."
+            )
 
     def reverse_transaction(self):
         voucher = frappe.get_doc(

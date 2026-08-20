@@ -1,0 +1,159 @@
+{
+ "actions": [],
+ "autoname": "field:voucher_no",
+ "creation": "2026-08-20 15:58:53.709376",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "voucher_details_section",
+  "voucher_no",
+  "customer",
+  "issue_date",
+  "column_break_dkxb",
+  "voucher_program",
+  "voucher_batch",
+  "expiry_date",
+  "values_section",
+  "original_value",
+  "available_balance",
+  "column_break_egfj",
+  "redeemed_value",
+  "status",
+  "beneficiary_details_section",
+  "beneficiary_name",
+  "column_break_qgua",
+  "beneficiary_reference",
+  "blocked"
+ ],
+ "fields": [
+  {
+   "fieldname": "voucher_details_section",
+   "fieldtype": "Section Break",
+   "label": "Voucher Details"
+  },
+  {
+   "fieldname": "voucher_no",
+   "fieldtype": "Data",
+   "label": "Voucher No",
+   "unique": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "issue_date",
+   "fieldtype": "Date",
+   "label": "Issue Date"
+  },
+  {
+   "fieldname": "column_break_dkxb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "voucher_program",
+   "fieldtype": "Link",
+   "label": "Voucher Program",
+   "options": "Voucher Program"
+  },
+  {
+   "fieldname": "voucher_batch",
+   "fieldtype": "Link",
+   "label": "Voucher Batch",
+   "options": "Voucher Batch"
+  },
+  {
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "label": "Expiry Date"
+  },
+  {
+   "fieldname": "values_section",
+   "fieldtype": "Section Break",
+   "label": "Values"
+  },
+  {
+   "fieldname": "original_value",
+   "fieldtype": "Currency",
+   "label": "Original Value"
+  },
+  {
+   "fieldname": "available_balance",
+   "fieldtype": "Currency",
+   "label": "Available Balance",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_egfj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "redeemed_value",
+   "fieldtype": "Currency",
+   "label": "Redeemed Value",
+   "read_only": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nDraft\nActive\nPartially Redeemed\nRedeemed\nExpired\nBlocked\nCancelled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "beneficiary_details_section",
+   "fieldtype": "Section Break",
+   "label": "Beneficiary Details"
+  },
+  {
+   "fieldname": "beneficiary_name",
+   "fieldtype": "Data",
+   "label": "Beneficiary Name"
+  },
+  {
+   "fieldname": "column_break_qgua",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "beneficiary_reference",
+   "fieldtype": "Data",
+   "label": "Beneficiary Reference"
+  },
+  {
+   "default": "0",
+   "fieldname": "blocked",
+   "fieldtype": "Check",
+   "label": "Blocked"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-20 16:21:02.737632",
+ "modified_by": "Administrator",
+ "module": "Courts Voucher",
+ "name": "Voucher",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

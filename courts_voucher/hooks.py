@@ -250,3 +250,17 @@ app_license = "mit"
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
 
+# Courts Voucher POS Integration
+page_js = {
+    "point-of-sale": "public/js/voucher_pos.js",
+}
+doc_events = {
+    "POS Invoice": {
+        "on_submit": "courts_voucher.events.pos_invoice.on_submit",
+        "on_cancel": "courts_voucher.events.pos_invoice.on_cancel",
+    },
+    "POS Closing Entry": {
+        "on_submit": "courts_voucher.events.pos_closing_entry.on_submit",
+        "on_cancel": "courts_voucher.events.pos_closing_entry.on_cancel",
+    },
+}

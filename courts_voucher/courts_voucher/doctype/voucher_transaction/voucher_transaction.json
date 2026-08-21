@@ -13,13 +13,16 @@
   "references_section",
   "reference_doctype",
   "balance_before",
+  "reference_type_text",
   "column_break_zxki",
   "reference_name",
   "balance_after",
+  "reference_name_text",
   "reversal_section",
   "reverses_transaction",
   "remarks_section",
   "remarks",
+  "accounting_journal_entry_ref",
   "section_break_ief6",
   "amended_from"
  ],
@@ -117,13 +120,30 @@
    "fieldtype": "Link",
    "label": "Reverses Transaction",
    "options": "Voucher Transaction"
+  },
+  {
+   "fieldname": "reference_type_text",
+   "fieldtype": "Data",
+   "label": "Reference Type Text",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_name_text",
+   "fieldtype": "Data",
+   "label": "Reference Name Text",
+   "read_only": 1
+  },
+  {
+   "fieldname": "accounting_journal_entry_ref",
+   "fieldtype": "Data",
+   "label": "Accounting Journal Entry Ref"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-20 20:45:16.039564",
+ "modified": "2026-08-21 11:02:55.298695",
  "modified_by": "Administrator",
  "module": "Courts Voucher",
  "name": "Voucher Transaction",

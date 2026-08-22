@@ -21,9 +21,16 @@ def create_voucher_accounting_entry(doc):
     Create one consolidated Journal Entry for Voucher payments
     contained in this POS Closing Entry.
 
-    Accounting:
-        Dr Voucher Program Liability
+    Normal voucher redemption:
+        Dr Voucher Liability
         Cr Voucher Clearing
+
+    Voucher return:
+        Dr Voucher Clearing
+        Cr Voucher Liability
+
+    Sales and returns in the same closing are netted by
+    Voucher Program liability account.
     """
 
     existing_je = (
@@ -55,19 +62,18 @@ def create_voucher_accounting_entry(doc):
 
     liability_totals = {}
 
-    total_voucher_amount = 0
-
     for payment in voucher_payments:
         voucher_no = payment.get("voucher_no")
         amount = flt(payment.get("amount"))
+        invoice_name = payment.get("invoice")
 
         if not voucher_no:
             frappe.throw(
                 f"Voucher number is missing on Voucher payment "
-                f"for invoice {payment.get('invoice')}."
+                f"for invoice {invoice_name}."
             )
 
-        if amount <= 0:
+        if amount == 0:
             continue
 
         if not frappe.db.exists(
@@ -113,13 +119,20 @@ def create_voucher_accounting_entry(doc):
             0,
         )
 
+        # Positive amount = voucher redemption / sale
+        # Negative amount = voucher return
         liability_totals[
             program.liability_account
         ] += amount
 
-        total_voucher_amount += amount
+    # Remove accounts whose net movement is zero.
+    liability_totals = {
+        account: flt(amount)
+        for account, amount in liability_totals.items()
+        if abs(flt(amount)) > 0.000001
+    }
 
-    if total_voucher_amount <= 0:
+    if not liability_totals:
         return
 
     clearing_account = get_voucher_clearing_account(
@@ -139,33 +152,70 @@ def create_voucher_accounting_entry(doc):
         f"POS Closing Entry {doc.name}"
     )
 
+    total_signed_amount = 0
+
     for liability_account, amount in (
         liability_totals.items()
     ):
-        if flt(amount) <= 0:
-            continue
+        amount = flt(amount)
 
+        total_signed_amount += amount
+
+        if amount > 0:
+            # Normal voucher redemption
+            #
+            # Dr Voucher Liability
+            # Cr Voucher Clearing
+            journal_entry.append(
+                "accounts",
+                {
+                    "account": liability_account,
+                    "debit_in_account_currency": amount,
+                    "credit_in_account_currency": 0,
+                },
+            )
+
+        elif amount < 0:
+            # Voucher return
+            #
+            # Dr Voucher Clearing
+            # Cr Voucher Liability
+            journal_entry.append(
+                "accounts",
+                {
+                    "account": liability_account,
+                    "debit_in_account_currency": 0,
+                    "credit_in_account_currency": abs(
+                        amount
+                    ),
+                },
+            )
+
+    # Clearing account is the opposite side of the
+    # combined voucher movement.
+    if total_signed_amount > 0:
         journal_entry.append(
             "accounts",
             {
-                "account": liability_account,
-                "debit_in_account_currency": flt(
-                    amount
+                "account": clearing_account,
+                "debit_in_account_currency": 0,
+                "credit_in_account_currency": flt(
+                    total_signed_amount
+                ),
+            },
+        )
+
+    elif total_signed_amount < 0:
+        journal_entry.append(
+            "accounts",
+            {
+                "account": clearing_account,
+                "debit_in_account_currency": abs(
+                    flt(total_signed_amount)
                 ),
                 "credit_in_account_currency": 0,
             },
         )
-
-    journal_entry.append(
-        "accounts",
-        {
-            "account": clearing_account,
-            "debit_in_account_currency": 0,
-            "credit_in_account_currency": flt(
-                total_voucher_amount
-            ),
-        },
-    )
 
     journal_entry.insert(
         ignore_permissions=True
@@ -188,12 +238,14 @@ def create_voucher_accounting_entry(doc):
 
 def get_voucher_payments(doc):
     """
-    Read Voucher payment amounts directly from the actual
-    POS/Sales Invoice payment child rows included in this
-    POS Closing Entry.
+    Read Voucher payment amounts directly from POS/Sales Invoice
+    payment rows contained in the POS Closing Entry.
 
-    This keeps our Voucher Clearing credit aligned with
-    ERPNext's POS consolidation.
+    Positive amount:
+        Voucher redemption
+
+    Negative amount:
+        Voucher return
     """
 
     voucher_payments = []
@@ -207,30 +259,10 @@ def get_voucher_payments(doc):
             row.pos_invoice,
         )
 
-        for payment in invoice.payments or []:
-            if (
-                payment.mode_of_payment
-                != VOUCHER_MODE_OF_PAYMENT
-            ):
-                continue
-
-            amount = flt(payment.amount)
-
-            if amount <= 0:
-                continue
-
-            voucher_payments.append(
-                {
-                    "invoice": invoice.name,
-                    "voucher_no": (
-                        payment.custom_voucher_no
-                    ),
-                    "voucher_program": (
-                        payment.custom_voucher_program
-                    ),
-                    "amount": amount,
-                }
-            )
+        append_invoice_voucher_payments(
+            voucher_payments,
+            invoice,
+        )
 
     for row in doc.sales_invoices or []:
         if not row.sales_invoice:
@@ -241,32 +273,45 @@ def get_voucher_payments(doc):
             row.sales_invoice,
         )
 
-        for payment in invoice.payments or []:
-            if (
-                payment.mode_of_payment
-                != VOUCHER_MODE_OF_PAYMENT
-            ):
-                continue
-
-            amount = flt(payment.amount)
-
-            if amount <= 0:
-                continue
-
-            voucher_payments.append(
-                {
-                    "invoice": invoice.name,
-                    "voucher_no": (
-                        payment.custom_voucher_no
-                    ),
-                    "voucher_program": (
-                        payment.custom_voucher_program
-                    ),
-                    "amount": amount,
-                }
-            )
+        append_invoice_voucher_payments(
+            voucher_payments,
+            invoice,
+        )
 
     return voucher_payments
+
+
+def append_invoice_voucher_payments(
+    voucher_payments,
+    invoice,
+):
+    for payment in invoice.payments or []:
+        if (
+            payment.mode_of_payment
+            != VOUCHER_MODE_OF_PAYMENT
+        ):
+            continue
+
+        amount = flt(payment.amount)
+
+        if amount == 0:
+            continue
+
+        voucher_payments.append(
+            {
+                "invoice": invoice.name,
+                "is_return": (
+                    1 if invoice.is_return else 0
+                ),
+                "voucher_no": (
+                    payment.custom_voucher_no
+                ),
+                "voucher_program": (
+                    payment.custom_voucher_program
+                ),
+                "amount": amount,
+            }
+        )
 
 
 def get_voucher_clearing_account(company):

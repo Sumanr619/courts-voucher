@@ -34,8 +34,7 @@ frappe.provide("courts_voucher");
 
 			const voucher_control = this.selected_mode;
 
-			// Deselect it while the dialog is open so keyboard/numpad
-			// input cannot accidentally alter the voucher payment.
+			// Deselect while voucher dialog is open.
 			this.selected_mode = "";
 
 			this.show_voucher_redemption_dialog(voucher_control);
@@ -57,7 +56,6 @@ frappe.provide("courts_voucher");
 			const existing_voucher_amount =
 				flt(voucher_control.get_value()) || 0;
 
-			// paid_amount may already include an existing Voucher amount.
 			const other_payments =
 				flt(doc.paid_amount) - existing_voucher_amount;
 
@@ -207,7 +205,12 @@ frappe.provide("courts_voucher");
 						frappe.msgprint(
 							__(
 								"Redemption amount cannot exceed voucher balance of {0}.",
-								[format_currency(available, doc.currency)]
+								[
+									format_currency(
+										available,
+										doc.currency
+									),
+								]
 							)
 						);
 						return;
@@ -229,8 +232,7 @@ frappe.provide("courts_voucher");
 					}
 
 					if (
-						!dialog.voucher_data
-							.allow_partial_redemption &&
+						!dialog.voucher_data.allow_partial_redemption &&
 						amount !== available
 					) {
 						frappe.msgprint(
@@ -257,6 +259,10 @@ frappe.provide("courts_voucher");
 						return;
 					}
 
+					// ------------------------------------------------
+					// Voucher details
+					// ------------------------------------------------
+
 					await frappe.model.set_value(
 						payment_row.doctype,
 						payment_row.name,
@@ -278,6 +284,32 @@ frappe.provide("courts_voucher");
 						""
 					);
 
+					// ------------------------------------------------
+					// IMPORTANT
+					//
+					// Voucher is technically configured as Bank so it
+					// can use the Voucher Clearing account.
+					//
+					// Another Client Script opens its Bank Payment
+					// Information dialog when:
+					//
+					// Mode of Payment Type = Bank
+					// AND custom_transaction_no is blank.
+					//
+					// We therefore use the voucher number itself as
+					// the transaction reference BEFORE setting amount.
+					// ------------------------------------------------
+
+					await frappe.model.set_value(
+						payment_row.doctype,
+						payment_row.name,
+						"custom_transaction_no",
+						dialog.voucher_data.voucher_no
+					);
+
+					// Set Voucher amount LAST.
+					// This is important because the other Client Script
+					// listens for the payment amount change.
 					await voucher_control.set_value(amount);
 
 					frappe.show_alert({

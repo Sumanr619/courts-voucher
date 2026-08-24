@@ -17,8 +17,14 @@
   "total_value",
   "remarks_section",
   "remarks",
+  "payment_details_section",
+  "received_amount",
+  "column_break_ynev",
+  "outstanding_amount",
   "section_break_vgvy",
-  "amended_from"
+  "amended_from",
+  "column_break_aaaj",
+  "accounting_journal_entry_ref"
  ],
  "fields": [
   {
@@ -95,13 +101,44 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
+  },
+  {
+   "fieldname": "column_break_aaaj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "accounting_journal_entry_ref",
+   "fieldtype": "Data",
+   "label": "Accounting Journal Entry Ref",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_details_section",
+   "fieldtype": "Section Break",
+   "label": "Payment Details"
+  },
+  {
+   "fieldname": "received_amount",
+   "fieldtype": "Currency",
+   "label": "Received Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ynev",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "outstanding_amount",
+   "fieldtype": "Currency",
+   "label": "Outstanding Amount",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-20 15:44:54.567599",
+ "modified": "2026-08-24 11:00:58.066470",
  "modified_by": "Administrator",
  "module": "Courts Voucher",
  "name": "Voucher Batch",

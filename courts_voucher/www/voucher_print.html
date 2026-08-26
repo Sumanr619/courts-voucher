@@ -1,0 +1,339 @@
+{% extends "templates/web.html" %}
+
+{% block title %}
+Voucher {{ voucher.voucher_no or voucher.name }}
+{% endblock %}
+
+{% block page_content %}
+
+<style>
+	@page {
+		size: A4 portrait;
+		margin: 10mm;
+	}
+
+	* {
+		box-sizing: border-box;
+	}
+
+	body {
+		margin: 0;
+		background: #eeeeee;
+	}
+
+	.voucher-page {
+		max-width: 210mm;
+		margin: 0 auto;
+		background: #ffffff;
+		padding: 10mm;
+	}
+
+	.print-toolbar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 12px 15px;
+		margin-bottom: 18px;
+		border: 1px solid #dddddd;
+		border-radius: 8px;
+		background: #ffffff;
+	}
+
+	.print-toolbar-title {
+		font-size: 18px;
+		font-weight: 700;
+	}
+
+	.print-toolbar-subtitle {
+		font-size: 12px;
+		color: #777777;
+		margin-top: 3px;
+	}
+
+	.print-button {
+		border: 0;
+		border-radius: 6px;
+		background: #111111;
+		color: #ffffff;
+		font-size: 13px;
+		font-weight: 600;
+		padding: 9px 20px;
+		cursor: pointer;
+	}
+
+	.voucher-wrapper {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 10px;
+	}
+
+	.voucher-card {
+		position: relative;
+		width: 178mm;
+		aspect-ratio: 2.38 / 1;
+		overflow: hidden;
+
+		background-image:
+			url("/assets/courts_voucher/images/courts_voucher_bg.png");
+
+		background-size: 100% 100%;
+		background-repeat: no-repeat;
+		background-position: center;
+
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
+
+	.voucher-value {
+		position: absolute;
+		left: 50%;
+		top: 4.8%;
+		transform: translateX(-50%);
+		width: 50%;
+		text-align: center;
+		white-space: nowrap;
+
+		font-family:
+			"Arial Black",
+			Arial,
+			Helvetica,
+			sans-serif;
+
+		font-size: 86px;
+		line-height: 0.95;
+		font-weight: 900;
+
+		color: #42dc3c;
+
+		-webkit-text-stroke:
+			3px #ffffff;
+
+		text-shadow:
+			2px 2px 0 #247924,
+			3px 3px 0 #176219,
+			4px 4px 3px rgba(0, 0, 0, 0.35);
+
+		z-index: 5;
+	}
+
+	.voucher-number {
+	position: absolute;
+
+	top: 4.2%;
+	right: 2.8%;
+
+	width: 27%;
+	height: 8.5%;
+
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	padding: 0 8px;
+	box-sizing: border-box;
+
+	text-align: center;
+	white-space: nowrap;
+	overflow: hidden;
+
+	font-family:
+		"Arial Narrow",
+		Arial,
+		Helvetica,
+		sans-serif;
+
+	font-size: 18px;
+	line-height: 1;
+	font-weight: 900;
+
+	letter-spacing: 0;
+
+	color: #ffffff;
+
+	text-shadow:
+		0 1px 1px rgba(0, 0, 0, 0.8),
+		1px 1px 1px rgba(0, 0, 0, 0.4);
+
+	z-index: 6;
+}
+	.voucher-barcode-wrap {
+		position: absolute;
+		top: 17%;
+		right: 2.3%;
+		width: 25.5%;
+		height: 24%;
+
+		padding: 4px 6px;
+
+		background: #ffffff;
+		border-radius: 5px;
+
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		overflow: hidden;
+
+		z-index: 5;
+
+		box-shadow:
+			0 1px 4px rgba(0, 0, 0, 0.22);
+	}
+
+	.voucher-barcode {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+
+	.voucher-expiry {
+		position: absolute;
+		left: 21%;
+		bottom: 4.2%;
+
+		font-family:
+			Arial,
+			Helvetica,
+			sans-serif;
+
+		font-size: 10px;
+		line-height: 1;
+		font-weight: 700;
+
+		color: #ffffff;
+
+		z-index: 5;
+	}
+
+	@media print {
+		html,
+		body {
+			margin: 0 !important;
+			padding: 0 !important;
+			background: #ffffff !important;
+		}
+
+		header,
+		footer,
+		.navbar,
+		.web-footer,
+		.page-header,
+		.print-toolbar {
+			display: none !important;
+		}
+
+		.container,
+		.container-fluid,
+		.page-container,
+		.page-content,
+		.web-page-content,
+		main {
+			width: 100% !important;
+			max-width: none !important;
+			margin: 0 !important;
+			padding: 0 !important;
+		}
+
+		.voucher-page {
+			width: 100%;
+			max-width: none;
+			margin: 0;
+			padding: 0;
+		}
+
+		.voucher-wrapper {
+			padding: 0;
+		}
+
+		.voucher-card {
+			width: 178mm;
+
+			-webkit-print-color-adjust:
+				exact !important;
+
+			print-color-adjust:
+				exact !important;
+		}
+
+		.voucher-barcode-wrap {
+			background: #ffffff !important;
+		}
+	}
+</style>
+
+
+<div class="voucher-page">
+
+	<div class="print-toolbar">
+
+		<div>
+			<div class="print-toolbar-title">
+				Voucher {{ voucher.voucher_no or voucher.name }}
+			</div>
+
+			<div class="print-toolbar-subtitle">
+				Individual Voucher Print
+			</div>
+		</div>
+
+		<button
+			type="button"
+			class="print-button"
+			onclick="window.print();"
+		>
+			Print Voucher
+		</button>
+
+	</div>
+
+
+	<div class="voucher-wrapper">
+
+		<div class="voucher-card">
+
+			<div class="voucher-value">
+				K{{ "{:,.0f}".format(
+					voucher.original_value or 0
+				) }}
+			</div>
+
+
+			<div class="voucher-number">
+				# {{ voucher.voucher_no or voucher.name }}
+			</div>
+
+
+			<div class="voucher-barcode-wrap">
+
+				{% if voucher.barcode_data_uri %}
+
+					<img
+						class="voucher-barcode"
+						src="{{ voucher.barcode_data_uri }}"
+						alt="Barcode {{ voucher.voucher_no or voucher.name }}"
+					>
+
+				{% endif %}
+
+			</div>
+
+
+			{% if voucher.expiry_date %}
+
+				<div class="voucher-expiry">
+					VALID UNTIL:
+					{{ frappe.utils.formatdate(
+						voucher.expiry_date
+					) }}
+				</div>
+
+			{% endif %}
+
+		</div>
+
+	</div>
+
+</div>
+
+{% endblock %}

@@ -4,19 +4,41 @@ frappe.ui.form.on("Voucher Batch", {
 			return;
 		}
 
+		// --------------------------------------------------------
+		// PRINT VOUCHERS
+		// --------------------------------------------------------
+
+		frm.add_custom_button(
+			__("Print Vouchers"),
+			() => {
+				const url =
+					"/voucher_batch_print?batch=" +
+					encodeURIComponent(frm.doc.name);
+
+				window.open(
+					url,
+					"_blank"
+				);
+			},
+			__("Voucher")
+		);
+
+		// --------------------------------------------------------
+		// RECEIVE
+		// --------------------------------------------------------
+
 		const outstanding =
 			flt(frm.doc.outstanding_amount);
 
-		if (outstanding <= 0) {
-			return;
+		if (outstanding > 0) {
+			frm.add_custom_button(
+				__("Receive"),
+				() => {
+					show_receive_dialog(frm);
+				},
+				__("Voucher")
+			);
 		}
-
-		frm.add_custom_button(
-			__("Receive"),
-			() => {
-				show_receive_dialog(frm);
-			}
-		);
 	},
 });
 
